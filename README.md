@@ -2,7 +2,7 @@
 
 A dynamic DNS Client made for Porkbun.
 
-| flag        | shorthand | required | description               | example               |
+| flag        | short | required | description               | example               |
 | :---------- | :-------- | :------- | :------------------------ | :-------------------- |
 | --domain    | -d        | true     | ドメイン                  | -d example.com        |
 | --subdomain | -s        | false    | サブドメイン              | -s sub                |
