@@ -1,4 +1,4 @@
-import { config, parse } from "./deps.ts";
+import { config, cron, parse } from "./deps.ts";
 
 export type DnsRecordType =
   | "A"
@@ -57,9 +57,9 @@ class PorkbunDDNS {
     this.list();
   }
 
-  private async requestBuilder(
+  private requestBuilder(
     body?: Partial<Omit<RequestBody, "apikey" | "secretapikey">>,
-  ): Promise<RequestInit> {
+  ): RequestInit {
     return {
       method: "POST",
       cache: "no-cache",
@@ -72,7 +72,7 @@ class PorkbunDDNS {
     };
   }
 
-  public async setApiKeys(keys: ApiConfig) {
+  public setApiKeys(keys: ApiConfig) {
     this.keys = keys;
   }
 
@@ -133,13 +133,13 @@ type DDNSConfig = Pick<DNSRecord, "type" | "content"> & {
   domain: string;
 };
 
+const PORKBUN_API_KEY = await config().apikey || "";
+const PORKBUN_SECRET_API_KEY = await config().secretapikey || "";
+
+const PorkbunApiEndpoint = "https://porkbun.com/api/json/v3/";
+
 const run = async (configDNS: DDNSConfig) => {
   try {
-    const PORKBUN_API_KEY = await config().apikey || "";
-    const PORKBUN_SECRET_API_KEY = await config().secretapikey || "";
-
-    const PorkbunApiEndpoint = "https://porkbun.com/api/json/v3/";
-
     const yourdomain = configDNS.domain;
     const ddns = await new PorkbunDDNS(PorkbunApiEndpoint, yourdomain);
 
@@ -154,7 +154,7 @@ const run = async (configDNS: DDNSConfig) => {
       configDNS.content,
       configDNS.type,
     );
-    console.info(findedRecord);
+    // console.info(findedRecord);
 
     if (findedRecord?.id && findedRecord?.content !== currentIp) {
       const res: Response = await ddns.updateRecord(findedRecord?.id, {
@@ -165,8 +165,10 @@ const run = async (configDNS: DDNSConfig) => {
       const updatedRecord = await ddns.findRecordById(findedRecord.id);
       console.info(updatedRecord);
       console.log("update succesed");
+      return;
     } else {
-      console.error("update is skipped\n");
+      console.error("update skipped\n");
+      return;
     }
   } catch (e) {
     console.error(e);
@@ -174,7 +176,6 @@ const run = async (configDNS: DDNSConfig) => {
 };
 
 const parsedArgs = parse(Deno.args);
-console.log(parsedArgs);
 const configDNS: DDNSConfig = {
   type: "A",
   content: "",
@@ -190,4 +191,6 @@ if (parsedArgs.type) {
   configDNS.type = parsedArgs.type;
 }
 
-run(configDNS);
+cron("* * * 1 * *", async () => {
+  await run(configDNS);
+});
