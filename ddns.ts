@@ -129,10 +129,6 @@ class PorkbunDDNS {
   }
 }
 
-type DDNSConfig = Pick<DNSRecord, "type" | "content"> & {
-  domain: string;
-};
-
 const PORKBUN_API_KEY = await config().apikey || "";
 const PORKBUN_SECRET_API_KEY = await config().secretapikey || "";
 
@@ -151,10 +147,9 @@ const run = async (configDNS: DDNSConfig) => {
     const currentIp = await ddns.ping() || "";
 
     const findedRecord = await ddns.findRecordsByName(
-      configDNS.content,
+      configDNS.subdomain + configDNS.domain,
       configDNS.type,
     );
-    // console.info(findedRecord);
 
     if (findedRecord?.id && findedRecord?.content !== currentIp) {
       const res: Response = await ddns.updateRecord(findedRecord?.id, {
@@ -175,22 +170,32 @@ const run = async (configDNS: DDNSConfig) => {
   }
 };
 
+
+type DDNSConfig = Pick<DNSRecord, "type"> & {
+  domain: string;
+  subdomain: string;
+};
+
 const parsedArgs = parse(Deno.args);
 const configDNS: DDNSConfig = {
   type: "A",
-  content: "",
+  subdomain: "",
   domain: "",
+  cron: "* * * 1 * *"
 };
-if (parsedArgs.domain) {
-  configDNS.domain = parsedArgs.domain;
+if (parsedArgs.domain || parsedArgs.d) {
+  configDNS.domain = parsedArgs.domain || parsedArgs.d;
 }
-if (parsedArgs.content) {
-  configDNS.content = parsedArgs.content;
+if (parsedArgs.subdomain || parsedArgs.s) {
+  configDNS.subdomain = parsedArgs.subdomain || parsedArgs.s;
 }
-if (parsedArgs.type) {
-  configDNS.type = parsedArgs.type;
+if (parsedArgs.type || parsedArgs.t) {
+  configDNS.type = parsedArgs.type || parsedArgs.t;
+}
+if (parsedArgs.cron || parsedArgs.c) {
+  configDNS.cron = parsedArgs.cron || parsedArgs.c
 }
 
-cron("* * * 1 * *", async () => {
+cron(configDNS.cron, async () => {
   await run(configDNS);
 });
