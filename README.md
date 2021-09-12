@@ -2,7 +2,7 @@
 
 A dynamic DNS Client made for Porkbun.
 
-環境変数としてPorkbunのAPIキーを設定します。
+PorkbunのAPIキーを環境変数としてexportします。
 
 ```sh
 export PORKBUN_API_KEY=yourporkbunapikey
