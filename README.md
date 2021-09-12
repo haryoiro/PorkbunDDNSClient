@@ -11,9 +11,9 @@ export PORKBUN_SECRET_API_KEY=yourporkbunsecretapikey
 
 | flag        | shorthand | description                         |
 | :---------- | :-------- | :---------------------------------- |
-| --domain    | -d        | ドメイン                            |
-| --subdomain | -s        | サブドメイン                        |
-| --cron      | -c        | デフォルトで 1 日毎に実行されます。 |
+| --domain    | -d        | ドメイン ex.  example.com                           |
+| --subdomain | -s        | サブドメイン ex. sub                       |
+| --cron      | -c        | デフォルトは1日毎に設定 |
 
 ## Usage
 
