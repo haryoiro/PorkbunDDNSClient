@@ -1,4 +1,4 @@
-import { cron, parse } from "./deps.ts";
+import { _, cron, yargs } from "./deps.ts";
 
 export type DnsRecordType =
   | "A"
@@ -129,26 +129,22 @@ class PorkbunDDNS {
   }
 }
 
-const PORKBUN_API_KEY = Deno.env.get("PORKBUN_API_KEY") || "";
-const PORKBUN_SECRET_API_KEY = Deno.env.get("PORKBUN_SECRET_API_KEY") || "";
-
 const PorkbunApiEndpoint = "https://porkbun.com/api/json/v3/";
 
-const run = async (configDNS: DDNSConfig) => {
+const run = async (configDNS: Arguments) => {
   try {
     const yourdomain = configDNS.domain;
     const ddns = await new PorkbunDDNS(PorkbunApiEndpoint, yourdomain);
 
     await ddns.setApiKeys({
-      apikey: PORKBUN_API_KEY,
-      secretapikey: PORKBUN_SECRET_API_KEY,
+      apikey: configDNS.apikey,
+      secretapikey: configDNS.secret,
     });
 
     const currentIp = await ddns.ping() || "";
 
     const findedRecord = await ddns.findRecordsByName(
       configDNS.subdomain + configDNS.domain,
-      configDNS.type,
     );
 
     if (findedRecord?.id && findedRecord?.content !== currentIp) {
@@ -170,31 +166,49 @@ const run = async (configDNS: DDNSConfig) => {
   }
 };
 
-type DDNSConfig = Pick<DNSRecord, "type"> & {
-  domain: string;
+interface Arguments {
+  type: string;
   subdomain: string;
+  domain: string;
   cron: string;
+  secret: string;
+  apikey: string;
+}
+
+let inputArgs: Arguments = yargs(Deno.args)
+  .alias("s", "subdomain")
+  .alias("d", "domain")
+  .alias("c", "cron")
+  .alias("k", "apikey")
+  .alias("i", "secret").argv;
+
+const errorMessages: { [k: string]: string } = {
+  subdomain: "Provide your subdomain value using --subdomain [-s] parameter",
+  domain: "Provide your domain value using --domain [-d] parameter",
+  apikey: "Provide your Porkbun API key SID using --apikey [-k] parameter",
+  secret:
+    "Provide your Porkbun Secret API key SID using --secret [-i] parameter",
 };
 
-const parsedArgs = parse(Deno.args);
-const configDNS: DDNSConfig = {
-  type: "A",
-  subdomain: "",
-  domain: "",
+inputArgs = _.defaults(inputArgs, {
+  apikey: Deno.env.get("PORKBUN_API_KEY"),
+  secret: Deno.env.get("PORKBUN_SECRET_API_KEY"),
   cron: "* * * 1 * *",
-};
-if (parsedArgs.domain || parsedArgs.d) {
-  configDNS.domain = parsedArgs.domain || parsedArgs.d;
+  type: "A",
+});
+// deno-lint-ignore no-explicit-any
+inputArgs = <any> _.pickBy(inputArgs, _.identity);
+
+const errors: string[] = _.difference(_.keys(errorMessages), _.keys(inputArgs));
+if (errors.length > 0) {
+  errors.forEach((error) => console.log(errorMessages[error]));
+  console.log(
+    "\nProper program usage is:\ndeno run --allow-env --allow-net pddns.ts \\ \n-k <your api key> \\ \n-i <your secret> \\ \n-d example.com \\ \n-s sub ",
+  );
+  Deno.exit(1);
 }
-if (parsedArgs.subdomain || parsedArgs.s) {
-  configDNS.subdomain = parsedArgs.subdomain || parsedArgs.s;
-}
-if (parsedArgs.type || parsedArgs.t) {
-  configDNS.type = parsedArgs.type || parsedArgs.t;
-}
-if (parsedArgs.cron || parsedArgs.c) {
-  configDNS.cron = parsedArgs.cron || parsedArgs.c;
-}
+
+const configDNS = { ...inputArgs };
 
 await run(configDNS);
 cron(configDNS.cron, async () => {
