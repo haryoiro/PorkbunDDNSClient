@@ -170,10 +170,10 @@ const run = async (configDNS: DDNSConfig) => {
   }
 };
 
-
 type DDNSConfig = Pick<DNSRecord, "type"> & {
   domain: string;
   subdomain: string;
+  cron: string;
 };
 
 const parsedArgs = parse(Deno.args);
@@ -181,7 +181,7 @@ const configDNS: DDNSConfig = {
   type: "A",
   subdomain: "",
   domain: "",
-  cron: "* * * 1 * *"
+  cron: "* * * 1 * *",
 };
 if (parsedArgs.domain || parsedArgs.d) {
   configDNS.domain = parsedArgs.domain || parsedArgs.d;
@@ -193,7 +193,7 @@ if (parsedArgs.type || parsedArgs.t) {
   configDNS.type = parsedArgs.type || parsedArgs.t;
 }
 if (parsedArgs.cron || parsedArgs.c) {
-  configDNS.cron = parsedArgs.cron || parsedArgs.c
+  configDNS.cron = parsedArgs.cron || parsedArgs.c;
 }
 
 cron(configDNS.cron, async () => {
