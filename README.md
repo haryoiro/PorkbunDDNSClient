@@ -20,6 +20,6 @@ export PORKBUN_SECRET_API_KEY=yourporkbunsecretapikey
 ```sh
 deno run --allow-net --allow-read --allow-env ddns.ts \
   -d "example.com"\
-  -s"sub"         \
+  -s "sub"        \
   -c "* * * 1 * *"
 ```
