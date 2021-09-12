@@ -1,4 +1,4 @@
-import { config, cron, parse } from "./deps.ts";
+import { cron, parse } from "./deps.ts";
 
 export type DnsRecordType =
   | "A"
@@ -129,8 +129,8 @@ class PorkbunDDNS {
   }
 }
 
-const PORKBUN_API_KEY = await config().apikey || "";
-const PORKBUN_SECRET_API_KEY = await config().secretapikey || "";
+const PORKBUN_API_KEY = Deno.env.get("PORKBUN_API_KEY") || "";
+const PORKBUN_SECRET_API_KEY = Deno.env.get("PORKBUN_SECRET_API_KEY") || "";
 
 const PorkbunApiEndpoint = "https://porkbun.com/api/json/v3/";
 
@@ -196,6 +196,7 @@ if (parsedArgs.cron || parsedArgs.c) {
   configDNS.cron = parsedArgs.cron || parsedArgs.c;
 }
 
+await run(configDNS);
 cron(configDNS.cron, async () => {
   await run(configDNS);
 });
